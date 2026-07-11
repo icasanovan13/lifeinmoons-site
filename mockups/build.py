@@ -7,8 +7,8 @@ site = here.parent
 
 css = (here / "shared.css").read_text()
 shared = (here / "shared.js").read_text()
-moonmath = (site / "moonmath.js").read_text()
-moonglobe = (site / "moonglobe.js").read_text()
+moonmath = (site / "js/moonmath.js").read_text()
+moonglobe = (site / "js/moonglobe.js").read_text()
 tex = "data:image/jpeg;base64," + base64.b64encode((site / "assets/moontex.jpg").read_bytes()).decode()
 small = "data:image/png;base64," + base64.b64encode((site / "assets/moonsmall.png").read_bytes()).decode()
 

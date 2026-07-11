@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- Phone-width harness for headless screenshots (Chrome enforces a 500px
+     minimum window width). ?page=../index.html&scroll=0.5&date=2003-04-09&reveal=1 -->
+<html><head><style>
+  body { margin: 0; background: #000; }
+  iframe { width: 390px; height: 757px; border: 0; }
+</style></head><body>
+<iframe id="f"></iframe>
+<script>
+  const q = new URLSearchParams(location.search);
+  const f = document.getElementById("f");
+  f.src = q.get("page") || "../index.html";
+  f.addEventListener("load", () => {
+    const win = f.contentWindow, doc = win.document;
+    const date = q.get("date");
+    if (date) {
+      const inp = doc.querySelector("input[type=date]");
+      if (inp) { inp.value = date; inp.dispatchEvent(new win.Event("change")); }
+    }
+    setTimeout(() => {
+      if (q.get("reveal")) doc.querySelectorAll(".reveal").forEach(el => el.classList.add("vis"));
+      const s = parseFloat(q.get("scroll") || "0");
+      if (s) {
+        doc.documentElement.style.scrollBehavior = "auto";
+        doc.documentElement.scrollTop = s * (doc.documentElement.scrollHeight - win.innerHeight);
+        win.dispatchEvent(new win.Event("scroll"));
+      }
+    }, 300);
+  });
+</script>
+</body></html>
