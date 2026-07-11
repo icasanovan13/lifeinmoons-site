@@ -1,0 +1,114 @@
+<title>Life in Moons — B · One thousand moons</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>__CSS__
+/* B: the field accumulates behind the words as you read */
+#field { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.hero .display { font-size: clamp(40px, 11vw, 72px); }
+.storyline { min-height: 72svh; display: flex; align-items: center; justify-content: center; }
+</style>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+<canvas id="field" aria-hidden="true"></canvas>
+
+<main>
+  <!-- HERO — typography first; the sky is still empty -->
+  <section class="hero">
+    <div class="label label--bright">Life in Moons</div>
+    <h1 class="display">One thousand<br>moons.</h1>
+    <p class="prose quiet" style="max-width:24rem">That is a long life — every full moon of
+      it on one screen. Keep scrolling; watch it fill.</p>
+    <div class="scrollcue" aria-hidden="true"></div>
+  </section>
+
+  <!-- STORY — one line at a time, moons gathering behind -->
+  <section class="storyline center"><p class="prose reveal">Not in days, which slip by
+    uncounted, or years, which are too large to feel. In full moons — one of the oldest
+    measures there is.</p></section>
+  <section class="storyline center"><p class="prose reveal">Every person who has ever lived
+    looked up at the same moon you’ll see tonight. It is the one clock we have always
+    shared.</p></section>
+  <section class="storyline center"><p class="prose reveal">The moons behind you, lit. The
+    moon above you now, breathing. The ones still ahead, waiting as faint outlines.</p></section>
+  <section class="storyline center"><p class="prose reveal">Each one will hold whatever you
+    give it — a note, a photograph, a milestone worth remembering — or stay empty forever.
+    Together they become a quiet record of a life.</p></section>
+
+  <hr class="hairline">
+
+  <!-- CALCULATOR -->
+  <section class="center calc" id="calc">
+    <div class="label">Your turn</div>
+    <h2>How many moons have you lived?</h2>
+    <input type="date" aria-label="Your birthday">
+    <div class="calcresult">
+      <div class="bignum num">0</div>
+      <p class="prose quiet calcline" style="font-size:15px"></p>
+      <div class="gridwrap"></div>
+      <p class="label" style="letter-spacing:.2em">Your moon is in there — the one that’s breathing</p>
+    </div>
+  </section>
+
+  <hr class="hairline">
+
+  <!-- TONIGHT — the 3D moon lives here in this direction -->
+  <section class="center tonight" id="tonight">
+    <div class="label">Tonight’s sky</div>
+    <canvas class="globe" id="globe" aria-label="The moon, slowly turning"></canvas>
+    <div class="phasewrap" style="width:110px;height:110px"><canvas aria-label="Tonight's moon phase"></canvas></div>
+    <div class="rows">
+      <p class="prose quiet t-last" style="font-size:15px"></p>
+      <p class="prose t-next" style="font-size:15px"></p>
+    </div>
+  </section>
+
+  <hr class="hairline">
+
+  <!-- VIGNETTES -->
+  <section>
+    <div class="vignettes">
+      <div class="vignette reveal">
+        <div class="label">Keep what matters</div>
+        <p class="prose">A note, a photograph, a milestone — each moon holds whatever you
+          give it. A companion star marks the ones that carry a memory.</p>
+      </div>
+      <div class="vignette reveal">
+        <div class="label"><span class="copperdot"></span>Blood moons</div>
+        <p class="prose">Some nights the moon turns copper — a total eclipse. Your calendar
+          knows every one from 1920 to 2130. The next: New Year’s Eve, 2028.</p>
+      </div>
+      <div class="vignette reveal">
+        <div class="label">On paper</div>
+        <p class="prose">Print your whole sky as an A2 poster — every moon dated, your
+          current one ringed.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="hairline">
+
+  <!-- CTA -->
+  <section class="center cta">
+    <h2 class="reveal">Live every moon cycle to the fullest.</h2>
+    <a class="button reveal" href="#">Coming soon</a>
+    <p class="label reveal">Now in private beta for iPhone</p>
+  </section>
+</main>
+
+<footer>
+  <hr class="hairline">
+  <nav><a href="#">Privacy</a><a href="#">Support</a></nav>
+  <p class="label" style="letter-spacing:.22em">Made under the same moon · Boston</p>
+</footer>
+
+<script>__MOONMATH__</script>
+<script>__MOONGLOBE__</script>
+<script>
+window.MOONSMALL_SRC = "__MOONSMALL_URI__";
+__SHARED__
+starfield(document.getElementById("sky"));
+scrollField(document.getElementById("field"), 1000);
+MoonGlobe(document.getElementById("globe"), { src: "__MOONTEX_URI__" });
+calculator(document.getElementById("calc"));
+tonight(document.getElementById("tonight"));
+reveals();
+</script>

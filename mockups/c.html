@@ -1,0 +1,104 @@
+<title>Life in Moons — C · Your number first</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>__CSS__
+/* C: the calculator IS the hero */
+.hero { gap: 24px; min-height: 92svh; }
+.hero h1 { font-size: clamp(30px, 8vw, 48px); }
+.smallglobe { width: 120px; height: 120px; }
+</style>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<main>
+  <!-- HERO — ask immediately -->
+  <section class="hero calc" id="calc">
+    <div class="label label--bright">Life in Moons</div>
+    <h1>How many moons<br>have you lived?</h1>
+    <p class="prose quiet" style="max-width:24rem">A long life holds about a thousand full
+      moons. Enter your birthday — see where you are.</p>
+    <input type="date" aria-label="Your birthday">
+    <div class="calcresult">
+      <div class="bignum num">0</div>
+      <p class="prose quiet calcline" style="font-size:15px"></p>
+      <div class="gridwrap"></div>
+      <p class="label" style="letter-spacing:.2em">Your moon is in there — the one that’s breathing</p>
+    </div>
+    <div class="scrollcue" aria-hidden="true"></div>
+  </section>
+
+  <!-- STORY -->
+  <section class="center">
+    <h2 class="reveal">You are looking at your life.</h2>
+    <p class="prose reveal">Not in days, which slip by uncounted, or years, which are too
+      large to feel. In full moons — one of the oldest measures there is. Every person who
+      has ever lived looked up at the same moon you’ll see tonight. It is the one clock we
+      have always shared.</p>
+    <p class="prose reveal">The app asks nothing of you. There is no streak to keep, no
+      number to raise. But each moon will hold whatever you give it — a note, a photograph,
+      a milestone worth remembering — or stay empty forever. However you leave them,
+      together they become a quiet record of a life.</p>
+  </section>
+
+  <hr class="hairline">
+
+  <!-- TONIGHT -->
+  <section class="center tonight" id="tonight">
+    <div class="label">Tonight’s sky</div>
+    <div class="phasewrap"><canvas aria-label="Tonight's moon phase"></canvas></div>
+    <div class="rows">
+      <p class="prose quiet t-last" style="font-size:15px"></p>
+      <p class="prose t-next" style="font-size:15px"></p>
+    </div>
+  </section>
+
+  <hr class="hairline">
+
+  <!-- VIGNETTES -->
+  <section>
+    <div class="vignettes">
+      <div class="vignette reveal">
+        <div class="label">Keep what matters</div>
+        <p class="prose">A note, a photograph, a milestone — each moon holds whatever you
+          give it. A companion star marks the ones that carry a memory.</p>
+      </div>
+      <div class="vignette reveal">
+        <div class="label"><span class="copperdot"></span>Blood moons</div>
+        <p class="prose">Some nights the moon turns copper — a total eclipse. Your calendar
+          knows every one from 1920 to 2130. The next: New Year’s Eve, 2028.</p>
+      </div>
+      <div class="vignette reveal">
+        <div class="label">On paper</div>
+        <p class="prose">Print your whole sky as an A2 poster — every moon dated, your
+          current one ringed.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="hairline">
+
+  <!-- CTA — the globe sends you off -->
+  <section class="center cta">
+    <canvas class="smallglobe" id="globe" aria-label="The moon, slowly turning"></canvas>
+    <h2 class="reveal">Live every moon cycle to the fullest.</h2>
+    <a class="button reveal" href="#">Coming soon</a>
+    <p class="label reveal">Now in private beta for iPhone</p>
+  </section>
+</main>
+
+<footer>
+  <hr class="hairline">
+  <nav><a href="#">Privacy</a><a href="#">Support</a></nav>
+  <p class="label" style="letter-spacing:.22em">Made under the same moon · Boston</p>
+</footer>
+
+<script>__MOONMATH__</script>
+<script>__MOONGLOBE__</script>
+<script>
+window.MOONSMALL_SRC = "__MOONSMALL_URI__";
+__SHARED__
+starfield(document.getElementById("sky"));
+MoonGlobe(document.getElementById("globe"), { src: "__MOONTEX_URI__" });
+calculator(document.getElementById("calc"));
+tonight(document.getElementById("tonight"));
+reveals();
+</script>
