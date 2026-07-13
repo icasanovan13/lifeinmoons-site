@@ -99,31 +99,38 @@ function lifeGrid(canvas, opts) {
 }
 
 // ---- "How many moons have you lived?" ----
+// Free: the count (and blood-moon line). Behind the $2.99 unlock: the full
+// dated grid, unblurred, plus the printable A2 poster (js/poster.js) and the
+// horizon chips. With the paywall dormant (no config) everything stays free
+// except the poster, which simply doesn't appear.
 function calculator(root) {
   const input = root.querySelector("input[type=date]");
   const result = root.querySelector(".calcresult");
   const numEl = root.querySelector(".bignum");
   const lineEl = root.querySelector(".calcline");
   const wrap = root.querySelector(".gridwrap");
-  let grid = null, countRaf = null;
+  const paycard = root.querySelector(".paycard");
+  const posterRow = root.querySelector(".posterrow");
+  const gridCaption = root.querySelector(".gridcaption");
+  let grid = null, countRaf = null, life = null, lastBirthday = null;
 
   input.max = new Date().toISOString().slice(0, 10);
   input.min = "1920-01-01";
 
-  input.addEventListener("change", () => {
-    if (!input.value) return;
-    const [y, mo, d] = input.value.split("-").map(Number);
-    if (y < 1920) { lineEl.textContent = "The calendar begins in 1920."; return; }
-    const birthday = new Date(y, mo - 1, d);
-    if (birthday > new Date()) { lineEl.textContent = "That moon hasn't risen yet."; return; }
+  const horizon = () => Number(localStorage.getItem("lim_horizon")) || 90;
+  const horizonWord = h => ({ 80: "eighty", 90: "ninety", 100: "one hundred" })[h] || h;
 
-    const life = MoonMath.build(birthday, 90);
+  function render(birthday, { animate }) {
+    lastBirthday = birthday;
+    life = MoonMath.build(birthday, horizon());
+    life.birthday = birthday;
+    life.horizon = horizon();
     const bloods = life.moons.filter(m => m.isEclipse && m.number <= life.current).length;
     result.classList.add("on");
 
-    // count up to the number, easing out
+    // count up to the number, easing out — always free, always first
     if (countRaf) cancelAnimationFrame(countRaf);
-    const target = life.current, D = REDUCE ? 0 : 1500;
+    const target = life.current, D = animate && !REDUCE ? 1500 : 0;
     const start = performance.now();
     (function tick(now) {
       const p = D ? Math.min(1, (now - start) / D) : 1;
@@ -134,13 +141,93 @@ function calculator(root) {
 
     lineEl.innerHTML =
       "full moons lived — " + bloods + " of them blood red.<br>" +
-      "At ninety years, <span class='num'>" + (life.count - life.current) +
-      "</span> still wait for you.";
+      "At " + horizonWord(life.horizon) + " years, <span class='num'>" +
+      (life.count - life.current) + "</span> still wait for you.";
 
     if (grid) grid.stop();
     wrap.innerHTML = "<canvas aria-label='Your life in moons'></canvas>";
-    grid = lifeGrid(wrap.firstChild, { count: life.count, current: life.current, animate: true });
+    grid = lifeGrid(wrap.firstChild, { count: life.count, current: life.current, animate });
+
+    const gated = Paywall.enabled() && !Paywall.unlocked();
+    wrap.classList.toggle("locked", gated);
+    if (paycard) paycard.hidden = !gated;
+    if (posterRow) posterRow.hidden = !(Paywall.enabled() && Paywall.unlocked());
+    if (gridCaption) gridCaption.hidden = gated;
+    root.querySelectorAll(".chip").forEach(ch =>
+      ch.classList.toggle("chip--on", Number(ch.dataset.h) === life.horizon));
+  }
+
+  input.addEventListener("change", () => {
+    if (!input.value) return;
+    const [y, mo, d] = input.value.split("-").map(Number);
+    if (y < 1920) { lineEl.textContent = "The calendar begins in 1920."; result.classList.add("on"); return; }
+    const birthday = new Date(y, mo - 1, d);
+    if (birthday > new Date()) { lineEl.textContent = "That moon hasn't risen yet."; result.classList.add("on"); return; }
+    try { localStorage.setItem("lim_birthday", input.value); } catch {}
+    render(birthday, { animate: true });
   });
+
+  // buy → Stripe (the birthday stays home in localStorage)
+  const buyBtn = root.querySelector(".buybtn");
+  if (buyBtn) buyBtn.addEventListener("click", () => {
+    buyBtn.disabled = true;
+    Paywall.checkout().then(() => { buyBtn.disabled = false; refresh(); });
+  });
+
+  // restore by receipt email
+  const restoreLink = root.querySelector(".restorelink");
+  const restoreRow = root.querySelector(".restorerow");
+  if (restoreLink) restoreLink.addEventListener("click", () => {
+    restoreRow.hidden = !restoreRow.hidden;
+    if (!restoreRow.hidden) restoreRow.querySelector("input").focus();
+  });
+  if (restoreRow) restoreRow.querySelector("button").addEventListener("click", async () => {
+    const msg = root.querySelector(".restoremsg");
+    const email = restoreRow.querySelector("input").value;
+    if (!email) return;
+    msg.textContent = "Looking for your moons…";
+    const d = await Paywall.restore(email);
+    msg.textContent = d.ok ? "" : "No purchase found for that email.";
+    if (d.ok) refresh();
+  });
+
+  // horizon chips (post-unlock)
+  root.querySelectorAll(".chip").forEach(ch => ch.addEventListener("click", () => {
+    try { localStorage.setItem("lim_horizon", ch.dataset.h); } catch {}
+    if (lastBirthday) render(lastBirthday, { animate: false });
+  }));
+
+  // poster download
+  const posterBtn = root.querySelector(".posterbtn");
+  if (posterBtn) posterBtn.addEventListener("click", () => {
+    if (life && Paywall.unlocked()) Poster.download(life);
+  });
+
+  function refresh() {
+    if (lastBirthday) render(lastBirthday, { animate: false });
+  }
+
+  // returning visitor / returning buyer: restore their calendar quietly
+  function boot() {
+    const saved = localStorage.getItem("lim_birthday");
+    if (saved) {
+      input.value = saved;
+      const [y, mo, d] = saved.split("-").map(Number);
+      render(new Date(y, mo - 1, d), { animate: false });
+    }
+    Paywall.handleReturn().then(status => {
+      if (status === "unlocked") {
+        refresh();
+        root.scrollIntoView({ behavior: REDUCE ? "auto" : "smooth" });
+      } else if (status === "failed") {
+        const msg = root.querySelector(".restoremsg");
+        if (msg) msg.textContent =
+          "We couldn't confirm that payment — if you were charged, use Restore with your receipt email.";
+        if (paycard) paycard.hidden = false;
+      }
+    });
+  }
+  boot();
 }
 
 // ---- tonight's sky: real phase + next full moon ----

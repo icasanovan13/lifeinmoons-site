@@ -9,7 +9,12 @@
 <script>
   const q = new URLSearchParams(location.search);
   const f = document.getElementById("f");
-  f.src = q.get("page") || "../index.html";
+  // paywall state controls (same-origin localStorage, set before the page boots)
+  if (q.get("clear")) ["lim_unlock", "lim_birthday", "lim_horizon"].forEach(k => localStorage.removeItem(k));
+  if (q.get("unlock")) localStorage.setItem("lim_unlock", JSON.stringify({ mock: true }));
+  let src = q.get("page") || "../index.html";
+  if (q.get("paywall")) src += (src.includes("?") ? "&" : "?") + "paywall=" + q.get("paywall");
+  f.src = src;
   f.addEventListener("load", () => {
     const win = f.contentWindow, doc = win.document;
     const date = q.get("date");
@@ -18,6 +23,18 @@
       if (inp) { inp.value = date; inp.dispatchEvent(new win.Event("change")); }
     }
     setTimeout(() => {
+      // state probe for dump-dom debugging: ?probe=1 writes paywall state into the OUTER title
+      if (q.get("probe")) {
+        const pc = doc.querySelector(".paycard"), pr = doc.querySelector(".posterrow");
+        document.title = "PROBE " + JSON.stringify({
+          enabled: win.Paywall && win.Paywall.enabled(),
+          unlocked: win.Paywall && win.Paywall.unlocked(),
+          ls: win.localStorage.getItem("lim_unlock"),
+          paycardHidden: pc && pc.hidden,
+          posterrowHidden: pr && pr.hidden,
+          lockedClass: doc.querySelector(".gridwrap").className,
+        });
+      }
       if (q.get("reveal")) doc.querySelectorAll(".reveal").forEach(el => el.classList.add("vis"));
       const s = parseFloat(q.get("scroll") || "0");
       if (s) {

@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- Poster verification: generates the A2 PDF headlessly and exposes it as
+     base64 for extraction:
+     chrome --headless=new --dump-dom "http://127.0.0.1:8765/tools/postertest.html?birthday=2003-04-09&horizon=90"
+     then decode the contents of <pre id="b64"> to a .pdf. -->
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<pre id="status">generating…</pre>
+<pre id="b64"></pre>
+<script src="../js/moonmath.js"></script>
+<script src="../js/vendor/jspdf.umd.min.js"></script>
+<script src="../js/poster.js"></script>
+<script>
+  const q = new URLSearchParams(location.search);
+  const [y, m, d] = (q.get("birthday") || "2003-04-09").split("-").map(Number);
+  const horizon = Number(q.get("horizon") || 90);
+  const birthday = new Date(y, m - 1, d);
+  const life = MoonMath.build(birthday, horizon);
+  life.birthday = birthday;
+  life.horizon = horizon;
+  const uri = Poster.dataURI(life);
+  document.getElementById("b64").textContent = uri.split(",")[1];
+  document.getElementById("status").textContent =
+    "POSTER_OK moons=" + life.count + " current=" + life.current;
+</script>
+</body>
+</html>

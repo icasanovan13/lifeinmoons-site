@@ -60,7 +60,35 @@
       <div class="bignum num" aria-live="polite">0</div>
       <p class="prose quiet calcline" style="font-size:15px"></p>
       <div class="gridwrap"></div>
-      <p class="label" style="letter-spacing:.2em">Your moon is in there — the one that’s breathing</p>
+      <p class="label gridcaption" style="letter-spacing:.2em">Your moon is in there — the one that’s breathing</p>
+
+      <div class="paycard" hidden>
+        <div class="label label--bright">See your whole sky</div>
+        <p class="prose" style="font-size:16px">Every moon of your life, dated — the ones
+          behind you lit, your moon ringed, the rest waiting. Unlock your full calendar
+          and print it as an A2 poster.</p>
+        <button class="button buybtn" type="button">$2.99 · Unlock</button>
+        <p class="label">One time · yours forever</p>
+        <p class="prose quiet" style="font-size:14px">The full experience — notes,
+          photographs, blood moons, a moon that knows tonight’s sky — is the app.
+          $4.99, coming soon.</p>
+        <button class="linklike restorelink" type="button">Already unlocked? Restore</button>
+        <span class="restorerow" hidden>
+          <input type="email" placeholder="email from your receipt" aria-label="Receipt email">
+          <button class="button button--small" type="button">Restore</button>
+        </span>
+        <p class="label restoremsg" aria-live="polite"></p>
+      </div>
+
+      <div class="posterrow" hidden>
+        <div class="chips" role="group" aria-label="Horizon in years">
+          <button class="chip" type="button" data-h="80">80 years</button>
+          <button class="chip" type="button" data-h="90">90 years</button>
+          <button class="chip" type="button" data-h="100">100 years</button>
+        </div>
+        <button class="button posterbtn" type="button">Print poster (PDF)</button>
+        <p class="label" style="letter-spacing:.2em">A2 · all vector · razor sharp at any size</p>
+      </div>
     </div>
   </section>
 
@@ -121,8 +149,20 @@
   <p class="label" style="letter-spacing:.22em">Made under the same moon · Boston</p>
 </footer>
 
+<script>
+  // Payments config. BOTH values empty = paywall dormant (site fully free,
+  // no card shown). Filled in when the Stripe Payment Link + verify Worker
+  // exist — see docs/DEPLOY.md § Payments.
+  window.LIM_CONFIG = {
+    paymentLink: "",   // e.g. https://buy.stripe.com/…
+    verifyURL: "",     // e.g. https://lifeinmoons-verify.<account>.workers.dev
+  };
+</script>
 <script src="js/moonmath.js"></script>
 <script src="js/moonglobe.js"></script>
+<script src="js/vendor/jspdf.umd.min.js"></script>
+<script src="js/poster.js"></script>
+<script src="js/paywall.js"></script>
 <script src="js/site.js"></script>
 </body>
 </html>

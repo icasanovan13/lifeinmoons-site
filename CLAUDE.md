@@ -34,6 +34,22 @@ looks back" chosen by Isabella from three mocked artifacts (2026-07-11).
 - Console errors: `--enable-logging=stderr --dump-dom … | grep -i error`.
 - JS-only checks run via `osascript -l JavaScript` (JavaScriptCore).
 
+## Paywall ($2.99 — grid + poster)
+
+The moon COUNT is free (the hook); the full dated grid + A2 poster are the
+$2.99 unlock. App stays $4.99 with everything — the paycard upsells it.
+- `js/paywall.js` — unlock state (localStorage `lim_unlock`), Stripe Payment
+  Link hand-off, `?session_id=` return, restore-by-email. `?paywall=mock` on
+  the page URL = demo mode (fake checkout) for previews/tests.
+- `worker/verify.js` — Cloudflare Worker (holds the restricted Stripe key;
+  `/verify`, `/restore`). Deployed by pasting into the CF dashboard.
+- `js/poster.js` — jsPDF A2 poster, line-for-line port of the app's
+  Poster.swift (no memory stars; Times/Helvetica for New York/SF; alpha
+  pre-blended into solid colors — do the same for any new poster ink).
+- Config: `window.LIM_CONFIG` in index.html — both URLs empty ⇒ dormant.
+- Setup/test/go-live recipe: docs/DEPLOY.md § Payments.
+- Harness params (tools/phone.html): `paywall=mock`, `unlock=1`, `clear=1`.
+
 ## Deploy (pending)
 
 - Domain: **lifeinmoons.com** — registrar not yet known; Isabella to provide.

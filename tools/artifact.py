@@ -12,12 +12,17 @@ site = pathlib.Path(__file__).parent.parent
 html = (site / "index.html").read_text()
 
 css = (site / "css/site.css").read_text()
-js = "".join((site / f"js/{n}.js").read_text() + "\n" for n in ["moonmath", "moonglobe", "site"])
+js = (site / "js/vendor/jspdf.umd.min.js").read_text() + "\n"
+js += "".join((site / f"js/{n}.js").read_text() + "\n"
+              for n in ["moonmath", "moonglobe", "poster", "paywall", "site"])
 tex = "data:image/jpeg;base64," + base64.b64encode((site / "assets/moontex.jpg").read_bytes()).decode()
 small = "data:image/png;base64," + base64.b64encode((site / "assets/moonsmall.png").read_bytes()).decode()
 
 body = html.split("<body>")[1].split("</body>")[0]
 body = re.sub(r'<script src="[^"]+"></script>\s*', "", body)
+# preview runs the paywall in mock mode: the $2.99 button "succeeds" instantly
+body = re.sub(r'window\.LIM_CONFIG = \{[^}]*\};',
+              'window.LIM_CONFIG = { mock: true };', body, flags=re.S)
 
 out = (
     "<title>Life in Moons — production preview</title>\n"

@@ -34,6 +34,36 @@ Create EMPTY (no README), then Claude pushes:
    - `www`: **CNAME** → `cname.vercel-dns.com`
 4. HTTPS is automatic.
 
+## Payments ($2.99 unlock — Stripe + Cloudflare Worker)
+
+Architecture: static site → Stripe Payment Link (hosted checkout) → redirect
+back with `?session_id=…` → Cloudflare Worker (`worker/verify.js`) confirms the
+session is paid via a restricted Stripe key → browser stores the unlock in
+localStorage. Restore = receipt email → `/restore`. Config knobs live in ONE
+place: `window.LIM_CONFIG` in `index.html`. Both values empty ⇒ paywall
+dormant (site fully free, no card, no poster button).
+
+Setup (test mode first — toggle "Test mode" in the Stripe dashboard):
+1. Stripe → Products: "Life in Moons — your sky + poster", $2.99 one-time →
+   create **Payment Link** → After payment: redirect to
+   `https://lifeinmoons.com/?session_id={CHECKOUT_SESSION_ID}`.
+2. Stripe → Developers → API keys → **Create restricted key**:
+   Checkout Sessions = Read, all else None.
+3. Cloudflare (free) → Workers → Create → paste `worker/verify.js` → Deploy.
+   Settings → Variables and Secrets: `STRIPE_KEY` = restricted key,
+   `SIGN_SECRET` = any long random string. Note the `*.workers.dev` URL.
+4. Fill `LIM_CONFIG` in index.html (paymentLink + verifyURL), push.
+5. Test purchase with card `4242 4242 4242 4242` (any future expiry/CVC):
+   returns to the site → grid unblurs → poster downloads. Test `/restore`
+   with the receipt email in a private window.
+6. Go live: flip Payment Link + restricted key to LIVE mode versions, update
+   `STRIPE_KEY` in the Worker and `paymentLink` in index.html, push.
+
+Worker checks: `curl "https://<worker>/verify?session_id=cs_test_bogus"` →
+`{"ok":false…}`; a real paid test session id → `{"ok":true,"token":…}`.
+Refunds: Stripe dashboard (the unlock stays on the buyer's device; fresh
+verifies of a refunded session fail).
+
 ## After DNS (either path)
 
 - `curl -sI https://lifeinmoons.com | head -3` → 200 + valid cert.
