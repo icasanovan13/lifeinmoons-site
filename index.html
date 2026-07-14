@@ -153,8 +153,9 @@
   // no card shown). Filled in when the Stripe Payment Link + verify Worker
   // exist — see docs/DEPLOY.md § Payments.
   window.LIM_CONFIG = {
-    paymentLink: "",   // e.g. https://buy.stripe.com/…
-    verifyURL: "",     // e.g. https://lifeinmoons-verify.<account>.workers.dev
+    // TEST MODE — Stripe sandbox link; swap for the live link at launch
+    paymentLink: "https://buy.stripe.com/test_bJe8wPaT3df73qHb3Vbsc00",
+    verifyURL: "https://lifeinmoons-verify.icasanovan.workers.dev",
     appStoreURL: "",   // the $4.99 app button links here once it exists
   };
 </script>
