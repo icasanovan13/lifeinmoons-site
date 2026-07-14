@@ -190,28 +190,32 @@ footer a:hover, footer a:focus-visible { color: var(--ink); }
 
 .cta .button--soon { cursor: default; }
 
-/* ---- paywall: the sky fades into the fog ---- */
+/* ---- paywall: the sky in the fog ---- */
+/* The whole calendar blurs to a pattern (visible, never readable) and fades
+   out toward the card; the ONE crisp thing is the visitor's current moon,
+   breathing in its own small overlay canvas (.curmoon). filter:blur on the
+   canvas itself renders reliably on iOS Safari — backdrop-filter under a
+   mask does not (learned from her phone). */
 .gridwrap.locked {
   position: relative;
-  max-height: 52vh;
+  max-height: 38vh;
   overflow: hidden;
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
-  /* crisp at the top, gone by the bottom */
   -webkit-mask-image: linear-gradient(to bottom,
-    #000 0%, #000 34%, rgba(0,0,0,0.45) 58%, transparent 88%);
+    #000 0%, #000 46%, rgba(0,0,0,0.4) 72%, transparent 94%);
   mask-image: linear-gradient(to bottom,
-    #000 0%, #000 34%, rgba(0,0,0,0.45) 58%, transparent 88%);
+    #000 0%, #000 46%, rgba(0,0,0,0.4) 72%, transparent 94%);
 }
-.gridwrap.locked::after {
-  content: "";
-  position: absolute; inset: 0;
-  /* progressive soft-focus riding over the fade */
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 24%, #000 62%);
-  mask-image: linear-gradient(to bottom, transparent 24%, #000 62%);
+.gridwrap.locked > canvas:first-child {
+  filter: blur(7px) saturate(0.9);
+  opacity: 0.85;
+}
+.curmoon {
+  position: absolute;
+  z-index: 1;
+  filter: none;
 }
 .paycard {
   display: flex; flex-direction: column; align-items: center; gap: 15px;

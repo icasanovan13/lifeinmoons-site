@@ -47,7 +47,7 @@ $2.99 unlock. App stays $4.99 with everything — the paycard upsells it.
   Poster.swift (no memory stars; Times/Helvetica for New York/SF; alpha
   pre-blended into solid colors — do the same for any new poster ink).
 - Config: `window.LIM_CONFIG` in index.html — paymentLink+verifyURL empty ⇒ dormant; `appStoreURL` turns the card’s ghost “full app · $4.99” button into a live link.
-- Locked tease = “fade into the fog”: crisp top band (canvas auto-shifted so the visitor’s breathing moon stays visible), mask-image dissolve + masked backdrop-blur ::after, paycard floats into the fog (negative margin, frosted, cream glow).
+- Locked tease v2 = “one moon in the fog”: whole grid under filter:blur(7px) + mask fade + 38vh clip (pattern visible, nothing readable — the grid IS the product); the visitor’s current moon breathes CRISP in its own overlay canvas (.curmoon, skipCurrent on the main grid). NEVER use backdrop-filter under a mask — iOS Safari silently drops it (her phone caught it).
 - Setup/test/go-live recipe: docs/DEPLOY.md § Payments.
 - Harness params (tools/phone.html): `paywall=mock`, `unlock=1`, `clear=1`.
 

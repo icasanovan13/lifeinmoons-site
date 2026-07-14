@@ -79,6 +79,8 @@ function lifeGrid(canvas, opts) {
         ctx.globalAlpha = 0.82 * a;
         ctx.drawImage(moonImg, m.x - rr, m.y - rr, layout.dot, layout.dot);
       } else {
+        // locked view draws the current moon crisp in its own overlay canvas
+        if (opts.skipCurrent) { if (a < 1) done = false; continue; }
         // the current moon breathes, like the app
         const breathe = REDUCE ? 1 : 1 + 0.07 * Math.sin(now / 900);
         const r2 = rr * breathe;
@@ -96,6 +98,42 @@ function lifeGrid(canvas, opts) {
   }
   whenMoonReady(() => { rafId = requestAnimationFrame(drawFrame); });
   return { stop() { if (rafId) cancelAnimationFrame(rafId); }, layout };
+}
+
+// the visitor's current moon — the one crisp, breathing point above the fog
+function currentMoonOverlay(wrap, layout, offsetY, current) {
+  const m = layout.moons[Math.max(0, current - 1)];
+  const rr = layout.dot / 2;
+  const box = Math.max(24, Math.ceil(layout.dot * 3));
+  const cv = document.createElement("canvas");
+  cv.className = "curmoon";
+  cv.setAttribute("aria-hidden", "true");
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = box * dpr; cv.height = box * dpr;
+  cv.style.width = box + "px"; cv.style.height = box + "px";
+  cv.style.left = (m.x - box / 2) + "px";
+  cv.style.top = (m.y - offsetY - box / 2) + "px";
+  wrap.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  ctx.scale(dpr, dpr);
+  const c = box / 2;
+  function draw(now) {
+    ctx.clearRect(0, 0, box, box);
+    const breathe = REDUCE ? 1 : 1 + 0.07 * Math.sin(now / 900);
+    const r2 = rr * breathe;
+    if (moonImgReady) ctx.drawImage(moonImg, c - r2, c - r2, r2 * 2, r2 * 2);
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = "#F2E7CE";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(c, c, r2 + 3.5, 0, 7); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  if (REDUCE) { whenMoonReady(() => draw(0)); return; }
+  (function loop(now) {
+    if (!cv.isConnected) return; // removed on re-render/unlock
+    draw(now || 0);
+    requestAnimationFrame(loop);
+  })(0);
 }
 
 // ---- "How many moons have you lived?" ----
@@ -144,21 +182,22 @@ function calculator(root) {
       "At " + horizonWord(life.horizon) + " years, <span class='num'>" +
       (life.count - life.current) + "</span> still wait for you.";
 
+    const gated = Paywall.enabled() && !Paywall.unlocked();
     if (grid) grid.stop();
     wrap.innerHTML = "<canvas aria-label='Your life in moons'></canvas>";
-    grid = lifeGrid(wrap.firstChild, { count: life.count, current: life.current, animate });
-
-    const gated = Paywall.enabled() && !Paywall.unlocked();
+    grid = lifeGrid(wrap.firstChild, { count: life.count, current: life.current,
+                                       animate, skipCurrent: gated });
     wrap.classList.toggle("locked", gated);
     if (gated) {
-      // keep the visitor's breathing moon inside the crisp band: if their
+      // keep the visitor's breathing moon inside the visible window: if their
       // current moon sits deep in the grid, shift the canvas up so "now"
-      // lands about a third into the visible window
-      const clipH = Math.min(grid.layout.height, window.innerHeight * 0.52);
+      // lands about a third in — then draw it crisp above the fog
+      const clipH = Math.min(grid.layout.height, window.innerHeight * 0.38);
       const cur = grid.layout.moons[Math.max(0, life.current - 1)];
       const offset = Math.max(0, Math.min(cur.y - clipH * 0.32,
                                           grid.layout.height - clipH));
       wrap.firstChild.style.transform = offset ? "translateY(" + (-offset) + "px)" : "";
+      currentMoonOverlay(wrap, grid.layout, offset, life.current);
     }
     if (paycard) paycard.hidden = !gated;
     if (posterRow) posterRow.hidden = !(Paywall.enabled() && Paywall.unlocked());
