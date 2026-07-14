@@ -43,7 +43,7 @@ $2.99 unlock. App stays $4.99 with everything — the paycard upsells it.
   the page URL = demo mode (fake checkout) for previews/tests.
 - `worker/verify.js` — Cloudflare Worker (holds the restricted Stripe key;
   `/verify`, `/restore`). Deployed by pasting into the CF dashboard.
-- `js/poster.js` — jsPDF A2 poster, line-for-line port of the app's
+- `js/poster.js` — jsPDF A3 poster (A2 reference space ×1/√2, matching the app standard), line-for-line port of the app's
   Poster.swift (no memory stars; Times/Helvetica for New York/SF; alpha
   pre-blended into solid colors — do the same for any new poster ink).
 - Config: `window.LIM_CONFIG` in index.html — paymentLink+verifyURL empty ⇒ dormant; `appStoreURL` turns the card’s ghost “full app · $4.99” button into a live link.
