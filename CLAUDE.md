@@ -46,7 +46,8 @@ $2.99 unlock. App stays $4.99 with everything — the paycard upsells it.
 - `js/poster.js` — jsPDF A2 poster, line-for-line port of the app's
   Poster.swift (no memory stars; Times/Helvetica for New York/SF; alpha
   pre-blended into solid colors — do the same for any new poster ink).
-- Config: `window.LIM_CONFIG` in index.html — both URLs empty ⇒ dormant.
+- Config: `window.LIM_CONFIG` in index.html — paymentLink+verifyURL empty ⇒ dormant; `appStoreURL` turns the card’s ghost “full app · $4.99” button into a live link.
+- Locked tease = “fade into the fog”: crisp top band (canvas auto-shifted so the visitor’s breathing moon stays visible), mask-image dissolve + masked backdrop-blur ::after, paycard floats into the fog (negative margin, frosted, cream glow).
 - Setup/test/go-live recipe: docs/DEPLOY.md § Payments.
 - Harness params (tools/phone.html): `paywall=mock`, `unlock=1`, `clear=1`.
 

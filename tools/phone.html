@@ -26,6 +26,7 @@
       // state probe for dump-dom debugging: ?probe=1 writes paywall state into the OUTER title
       if (q.get("probe")) {
         const pc = doc.querySelector(".paycard"), pr = doc.querySelector(".posterrow");
+        const cv = doc.querySelector(".gridwrap canvas");
         document.title = "PROBE " + JSON.stringify({
           enabled: win.Paywall && win.Paywall.enabled(),
           unlocked: win.Paywall && win.Paywall.unlocked(),
@@ -33,6 +34,8 @@
           paycardHidden: pc && pc.hidden,
           posterrowHidden: pr && pr.hidden,
           lockedClass: doc.querySelector(".gridwrap").className,
+          canvasShift: cv ? cv.style.transform : null,
+          canvasH: cv ? cv.style.height : null,
         });
       }
       if (q.get("reveal")) doc.querySelectorAll(".reveal").forEach(el => el.classList.add("vis"));

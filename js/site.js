@@ -95,7 +95,7 @@ function lifeGrid(canvas, opts) {
     if (!done) rafId = requestAnimationFrame(drawFrame);
   }
   whenMoonReady(() => { rafId = requestAnimationFrame(drawFrame); });
-  return { stop() { if (rafId) cancelAnimationFrame(rafId); } };
+  return { stop() { if (rafId) cancelAnimationFrame(rafId); }, layout };
 }
 
 // ---- "How many moons have you lived?" ----
@@ -150,6 +150,16 @@ function calculator(root) {
 
     const gated = Paywall.enabled() && !Paywall.unlocked();
     wrap.classList.toggle("locked", gated);
+    if (gated) {
+      // keep the visitor's breathing moon inside the crisp band: if their
+      // current moon sits deep in the grid, shift the canvas up so "now"
+      // lands about a third into the visible window
+      const clipH = Math.min(grid.layout.height, window.innerHeight * 0.52);
+      const cur = grid.layout.moons[Math.max(0, life.current - 1)];
+      const offset = Math.max(0, Math.min(cur.y - clipH * 0.32,
+                                          grid.layout.height - clipH));
+      wrap.firstChild.style.transform = offset ? "translateY(" + (-offset) + "px)" : "";
+    }
     if (paycard) paycard.hidden = !gated;
     if (posterRow) posterRow.hidden = !(Paywall.enabled() && Paywall.unlocked());
     if (gridCaption) gridCaption.hidden = gated;
@@ -173,6 +183,15 @@ function calculator(root) {
     buyBtn.disabled = true;
     Paywall.checkout().then(() => { buyBtn.disabled = false; refresh(); });
   });
+
+  // the $4.99 app — the second call; becomes a real link once the App Store URL exists
+  const appBtn = root.querySelector(".appbtn");
+  const appURL = (window.LIM_CONFIG || {}).appStoreURL || "";
+  if (appBtn && appURL) {
+    appBtn.href = appURL;
+    appBtn.classList.remove("button--soon");
+    appBtn.textContent = "The full app · $4.99";
+  }
 
   // restore by receipt email
   const restoreLink = root.querySelector(".restorelink");

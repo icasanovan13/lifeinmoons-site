@@ -137,7 +137,7 @@ section { position: relative; padding: 18vh 7vw; }
   color: var(--moon);
   font-variant-numeric: tabular-nums;
 }
-.calcresult { display: none; flex-direction: column; align-items: center; gap: 18px; }
+.calcresult { display: none; flex-direction: column; align-items: center; gap: 12px; }
 .calcresult.on { display: flex; }
 .gridwrap { width: 100%; max-width: 520px; }
 .gridwrap canvas { width: 100%; display: block; }
@@ -190,23 +190,51 @@ footer a:hover, footer a:focus-visible { color: var(--ink); }
 
 .cta .button--soon { cursor: default; }
 
-/* ---- paywall ---- */
-.gridwrap.locked canvas {
-  filter: blur(13px) saturate(0.9);
-  opacity: 0.75;
+/* ---- paywall: the sky fades into the fog ---- */
+.gridwrap.locked {
+  position: relative;
+  max-height: 52vh;
+  overflow: hidden;
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
+  /* crisp at the top, gone by the bottom */
+  -webkit-mask-image: linear-gradient(to bottom,
+    #000 0%, #000 34%, rgba(0,0,0,0.45) 58%, transparent 88%);
+  mask-image: linear-gradient(to bottom,
+    #000 0%, #000 34%, rgba(0,0,0,0.45) 58%, transparent 88%);
+}
+.gridwrap.locked::after {
+  content: "";
+  position: absolute; inset: 0;
+  /* progressive soft-focus riding over the fade */
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 24%, #000 62%);
+  mask-image: linear-gradient(to bottom, transparent 24%, #000 62%);
 }
 .paycard {
-  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 15px;
   max-width: 24rem;
+  margin-top: -110px;           /* floats up into the fog */
+  position: relative; z-index: 1;
   padding: 30px 28px;
-  background: var(--card);
+  background: rgba(17, 23, 37, 0.86);   /* --card, frosted */
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   border: 1px solid var(--hair);
   border-radius: 4px;
+  box-shadow: 0 0 90px rgba(242, 231, 206, 0.07);
   text-align: center;
 }
+.button--ghost {
+  background: transparent;
+  color: var(--moon);
+  border: 1px solid var(--hair);
+  padding: 13px 26px;
+}
+.button--ghost:hover, .button--ghost:focus-visible { border-color: var(--dim); }
+.paycard .button { width: 100%; max-width: 250px; }
 .linklike {
   background: none; border: 0; padding: 0;
   font-family: var(--serif); font-size: 14px;

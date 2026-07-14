@@ -65,13 +65,12 @@
       <div class="paycard" hidden>
         <div class="label label--bright">See your whole sky</div>
         <p class="prose" style="font-size:16px">Every moon of your life, dated — the ones
-          behind you lit, your moon ringed, the rest waiting. Unlock your full calendar
-          and print it as an A2 poster.</p>
+          behind you lit, your moon ringed, the rest waiting. Yours to keep, and to
+          print as an A2 poster.</p>
         <button class="button buybtn" type="button">$2.99 · Unlock</button>
+        <a class="button button--ghost button--soon appbtn">The full app · $4.99 — coming soon</a>
+        <p class="label">notes · photographs · blood moons · tonight’s sky</p>
         <p class="label">One time · yours forever</p>
-        <p class="prose quiet" style="font-size:14px">The full experience — notes,
-          photographs, blood moons, a moon that knows tonight’s sky — is the app.
-          $4.99, coming soon.</p>
         <button class="linklike restorelink" type="button">Already unlocked? Restore</button>
         <span class="restorerow" hidden>
           <input type="email" placeholder="email from your receipt" aria-label="Receipt email">
@@ -156,6 +155,7 @@
   window.LIM_CONFIG = {
     paymentLink: "",   // e.g. https://buy.stripe.com/…
     verifyURL: "",     // e.g. https://lifeinmoons-verify.<account>.workers.dev
+    appStoreURL: "",   // the $4.99 app button links here once it exists
   };
 </script>
 <script src="js/moonmath.js"></script>
