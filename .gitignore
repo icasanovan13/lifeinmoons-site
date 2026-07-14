@@ -1,2 +1,6 @@
 mockups/dist/
 .DS_Store
+# never let a secret near this public repo
+.env
+*.env
+*.env.*
