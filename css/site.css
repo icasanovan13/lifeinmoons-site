@@ -108,27 +108,26 @@ section { position: relative; padding: 18vh 7vw; }
 }
 .globe { width: min(68vw, 320px); height: min(68vw, 320px); }
 
-/* whisper chevron — a hairline ⌄ drifting down and fading, barely there */
+/* whisper chevron — a hairline ⌄ breathing downward; quiet but never lost */
 .scrollcue {
-  position: absolute; bottom: 26px; left: 50%;
-  width: 16px; height: 16px;
+  position: absolute; bottom: 30px; left: 50%;
+  width: 24px; height: 24px;
   transform: translateX(-50%);
   animation: cue 3s ease-in-out infinite;
 }
 .scrollcue::before {
   content: "";
-  position: absolute; inset: 2px;
-  border-right: 1px solid rgba(242, 231, 206, 0.45);
-  border-bottom: 1px solid rgba(242, 231, 206, 0.45);
+  position: absolute; inset: 3px;
+  border-right: 1px solid rgba(242, 231, 206, 0.7);
+  border-bottom: 1px solid rgba(242, 231, 206, 0.7);
   transform: rotate(45deg);
 }
 @keyframes cue {
-  0%   { transform: translate(-50%, -4px); opacity: 0; }
-  35%  { opacity: .8; }
-  100% { transform: translate(-50%, 8px);  opacity: 0; }
+  0%, 100% { transform: translate(-50%, -3px); opacity: .35; }
+  50%      { transform: translate(-50%, 6px);  opacity: .9; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .scrollcue { animation: none; opacity: .6; }
+  .scrollcue { animation: none; opacity: .7; }
 }
 
 /* ---- calculator ---- */
@@ -167,9 +166,10 @@ section { position: relative; padding: 18vh 7vw; }
    flex item, so % margins are unreliable; this only needs a centered parent. */
 .gridwrap.sky {
   position: relative; left: 50%;
-  /* --sbw (set by JS) subtracts the classic scrollbar 100vw wrongly includes */
-  width: calc(100vw - var(--sbw, 0px));
-  max-width: calc(100vw - var(--sbw, 0px));
+  /* poster-framed: generous margins on desktop, slim gutter on phones.
+     TWIN of skyW() in js/site.js — change both together. */
+  width: min(90vw, 1100px);
+  max-width: min(90vw, 1100px);
   transform: translateX(-50%);
 }
 
@@ -280,6 +280,7 @@ footer a:hover, footer a:focus-visible { color: var(--ink); }
   /* after the sky ripples in, its chrome breathes in late */
   .calcresult.settling .posterrow,
   .calcresult.settling .skyline,
+  .calcresult.settling .skyrule,
   .calcresult.settling .gridcaption {
     opacity: 0;
     transform: translateY(8px);

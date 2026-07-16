@@ -159,6 +159,8 @@ function calculator(root) {
 
   // the unlocked sky solves its layout to a viewport-shaped box, not a column
   const skyTargetH = () => Math.max(window.innerHeight * 0.85, 560);
+  // poster-framed sky width — TWIN of .gridwrap.sky in css/site.css
+  const skyW = () => Math.min(document.documentElement.clientWidth * 0.90, 1100);
 
   input.max = new Date().toISOString().slice(0, 10);
   input.min = "1920-01-01";
@@ -205,10 +207,6 @@ function calculator(root) {
     clearTimeout(filmTimer); filmTimer = null;
     wrap.classList.remove("unveil");
     wrap.style.height = "";
-    // classic-scrollbar platforms: 100vw includes the scrollbar — expose its
-    // width so the sky's CSS can subtract it and center truly
-    document.documentElement.style.setProperty("--sbw",
-      (window.innerWidth - document.documentElement.clientWidth) + "px");
     wrap.classList.toggle("locked", gated);
     wrap.classList.toggle("sky", open);
     wrap.innerHTML = "<canvas aria-label='Your life in moons'></canvas>";
@@ -242,6 +240,7 @@ function calculator(root) {
         "<span class='num'>" + life.current + "</span> full moons lived · " +
         "<span class='num'>" + (life.count - life.current) + "</span> still to come";
     }
+    root.querySelectorAll(".skyrule").forEach(r => r.hidden = !open);
     if (gridCaption) gridCaption.hidden = gated;
     root.querySelectorAll(".chip").forEach(ch =>
       ch.classList.toggle("chip--on", Number(ch.dataset.h) === life.horizon));
@@ -344,7 +343,7 @@ function calculator(root) {
       if (!canvas.isConnected) return; // a re-render beat us to it — calm state stands
       // height tween needs concrete endpoints: measured fog clip → solved sky
       // (same two-pass math lifeGrid will run, so the landing is seamless)
-      const vw = document.documentElement.clientWidth;
+      const vw = skyW();
       const h0 = wrap.getBoundingClientRect().height;
       const probe = MoonMath.layoutMoons(vw, skyTargetH(),
                                          life.count, life.current, 1);
