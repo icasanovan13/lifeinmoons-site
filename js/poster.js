@@ -31,7 +31,9 @@ const Poster = (() => {
     doc.setFontSize(o.size * K);
     const c = blend(o.alpha === undefined ? 1 : o.alpha);
     doc.setTextColor(c[0], c[1], c[2]);
-    doc.text(str, (o.cx - (o.kern || 0) / 2) * K, o.y * K, {
+    // jsPDF centers on the un-kerned width; pull back by half the added
+    // tracking ((len-1) gaps) so kerned lines are truly centered
+    doc.text(str, (o.cx - (str.length - 1) * (o.kern || 0) / 2) * K, o.y * K, {
       align: "center", baseline: "top", charSpace: (o.kern || 0) * K,
     });
   }
@@ -58,7 +60,7 @@ const Poster = (() => {
                                  kern: 20, cx: pageW / 2, y: 92 });
     text(doc, "BORN " + bornStr + " · A HORIZON OF " + life.horizon +
               " YEARS · " + life.count + " FULL MOONS",
-         { size: 14, alpha: 0.55, kern: 3.5, cx: pageW / 2, y: 190 });
+         { size: 23, alpha: 0.75, kern: 4, cx: pageW / 2, y: 183 });
     hairline(doc, 232);
 
     // grid — the same solver as Poster.swift
@@ -96,22 +98,26 @@ const Poster = (() => {
       }
 
       // two stacked lines — "JUN 29" over "2026" — so dates never collide
+      // (same kerned-centering correction as text(): jsPDF ignores charSpace
+      // when centering)
       const dateY = cy + dotR + 2;
+      const monStr = MON3[m.date.getMonth()] + " " + m.date.getDate();
+      const yrStr = String(m.date.getFullYear());
       doc.setFont("helvetica", "normal");
       doc.setFontSize(dateSize * K);
       doc.setTextColor(dateA[0], dateA[1], dateA[2]);
-      doc.text(MON3[m.date.getMonth()] + " " + m.date.getDate(),
-               cx * K, dateY * K, { align: "center", baseline: "top", charSpace: 0.35 * K });
+      doc.text(monStr, (cx - (monStr.length - 1) * 0.35 / 2) * K, dateY * K,
+               { align: "center", baseline: "top", charSpace: 0.35 * K });
       doc.setTextColor(dateB[0], dateB[1], dateB[2]);
-      doc.text(String(m.date.getFullYear()),
-               cx * K, (dateY + dateSize + 1.2) * K,
+      doc.text(yrStr, (cx - (yrStr.length - 1) * 0.35 / 2) * K,
+               (dateY + dateSize + 1.2) * K,
                { align: "center", baseline: "top", charSpace: 0.35 * K });
     }
 
     // footer
     hairline(doc, pageH - 78);
     text(doc, "THE MOONS BEHIND YOU, LIT · THE ONES AHEAD, WAITING",
-         { size: 11, alpha: 0.45, kern: 3, cx: pageW / 2, y: pageH - 64 });
+         { size: 19, alpha: 0.65, kern: 3.5, cx: pageW / 2, y: pageH - 70 });
 
     return doc;
   }
