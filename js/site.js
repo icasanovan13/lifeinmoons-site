@@ -160,7 +160,7 @@ function calculator(root) {
   // the unlocked sky solves its layout to a viewport-shaped box, not a column
   const skyTargetH = () => Math.max(window.innerHeight * 0.85, 560);
   // poster-framed sky width — TWIN of .gridwrap.sky in css/site.css
-  const skyW = () => Math.min(document.documentElement.clientWidth * 0.90, 1100);
+  const skyW = () => Math.min(document.documentElement.clientWidth * 0.90, 960);
 
   input.max = new Date().toISOString().slice(0, 10);
   input.min = "1920-01-01";

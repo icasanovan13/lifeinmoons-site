@@ -168,8 +168,8 @@ section { position: relative; padding: 18vh 7vw; }
   position: relative; left: 50%;
   /* poster-framed: generous margins on desktop, slim gutter on phones.
      TWIN of skyW() in js/site.js — change both together. */
-  width: min(90vw, 1100px);
-  max-width: min(90vw, 1100px);
+  width: min(90vw, 960px);
+  max-width: min(90vw, 960px);
   transform: translateX(-50%);
 }
 
