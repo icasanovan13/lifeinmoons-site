@@ -21,20 +21,37 @@ const Paywall = (() => {
     return !!cfg.mock || (!!cfg.paymentLink && !!cfg.verifyURL);
   }
 
+  function read() {
+    try { return JSON.parse(localStorage.getItem(KEY) || "null") || mem; }
+    catch { return mem; }
+  }
+
   function unlocked() {
     if (!enabled()) return false;
-    try {
-      const u = JSON.parse(localStorage.getItem(KEY) || "null");
-      return !!(u && (u.mock || (u.sid && u.token)));
-    } catch { return false; }
+    const u = read();
+    return !!(u && (u.mock || (u.sid && u.token)));
   }
 
   function store(unlock) {
-    try { localStorage.setItem(KEY, JSON.stringify({ ...unlock, ts: Date.now() })); }
+    // merge-preserve `revealed` — a re-verify/restore must not replay the film
+    const prev = read();
+    const full = { ...unlock, revealed: !!(prev && prev.revealed), ts: Date.now() };
+    try { localStorage.setItem(KEY, JSON.stringify(full)); }
     catch { /* private browsing — unlock lives for the session via memory below */ }
-    mem = unlock;
+    mem = full;
   }
   let mem = null;
+
+  // the one-time unlock reveal: played the moment a purchase lands, never again
+  function revealed() {
+    const u = read();
+    return !!(u && u.revealed);
+  }
+  function markRevealed() {
+    const u = { ...(read() || {}), revealed: true };
+    try { localStorage.setItem(KEY, JSON.stringify(u)); } catch {}
+    mem = u;
+  }
 
   // → Stripe. The birthday never travels: it's already in localStorage
   //   (lim_birthday) and only ever read back by this browser.
@@ -70,5 +87,8 @@ const Paywall = (() => {
     return d;
   }
 
-  return { enabled, unlocked, checkout, handleReturn, restore };
+  // classic-script const doesn't reach window — export explicitly so the
+  // test harness (tools/phone.html) and console debugging can see the state
+  return (window.Paywall =
+    { enabled, unlocked, checkout, handleReturn, restore, revealed, markRevealed });
 })();

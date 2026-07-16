@@ -1,17 +1,27 @@
 <!doctype html>
 <!-- Phone-width harness for headless screenshots (Chrome enforces a 500px
-     minimum window width). ?page=../index.html&scroll=0.5&date=2003-04-09&reveal=1 -->
+     minimum window width). ?page=../index.html&scroll=0.5&date=2003-04-09&reveal=1
+     Size: &w=390&h=757 (desktop shots: w=1280&h=860 with a big --window-size).
+     Paywall: &paywall=mock &clear=1 &unlock=1 (calm unlocked) &buy=1 (click the
+     unlock button after the date settles) &buy=poster (click the poster button)
+     &probe=1 (dump state into the OUTER <title> for --dump-dom). -->
 <html><head><style>
   body { margin: 0; background: #000; }
-  iframe { width: 390px; height: 757px; border: 0; }
+  iframe { border: 0; }
 </style></head><body>
 <iframe id="f"></iframe>
 <script>
   const q = new URLSearchParams(location.search);
   const f = document.getElementById("f");
+  f.style.width = (parseInt(q.get("w")) || 390) + "px";
+  f.style.height = (parseInt(q.get("h")) || 757) + "px";
   // paywall state controls (same-origin localStorage, set before the page boots)
   if (q.get("clear")) ["lim_unlock", "lim_birthday", "lim_horizon"].forEach(k => localStorage.removeItem(k));
-  if (q.get("unlock")) localStorage.setItem("lim_unlock", JSON.stringify({ mock: true }));
+  if (q.get("unlock")) localStorage.setItem("lim_unlock", JSON.stringify({ mock: true, revealed: true }));
+  // bday= pre-seeds the saved birthday: boot renders it WITHOUT animation, so
+  // screenshots capture the finished grid (date= animates and freezes mid-ripple
+  // under --virtual-time-budget)
+  if (q.get("bday")) localStorage.setItem("lim_birthday", q.get("bday"));
   let src = q.get("page") || "../index.html";
   if (q.get("paywall")) src += (src.includes("?") ? "&" : "?") + "paywall=" + q.get("paywall");
   f.src = src;
@@ -22,20 +32,38 @@
       const inp = doc.querySelector("input[type=date]");
       if (inp) { inp.value = date; inp.dispatchEvent(new win.Event("change")); }
     }
+    // exercise the REAL unlock event (mock mode): click through after settle
+    const buy = q.get("buy");
+    if (buy) setTimeout(() => {
+      const btn = doc.querySelector(buy === "poster" ? ".posterbtn" : ".buybtn");
+      if (btn) btn.click();
+    }, 600);
     setTimeout(() => {
       // state probe for dump-dom debugging: ?probe=1 writes paywall state into the OUTER title
       if (q.get("probe")) {
         const pc = doc.querySelector(".paycard"), pr = doc.querySelector(".posterrow");
         const cv = doc.querySelector(".gridwrap canvas");
+        const sl = doc.querySelector(".skyline"), pb = doc.querySelector(".posterbtn");
+        const ch = doc.querySelector(".chips");
         document.title = "PROBE " + JSON.stringify({
           enabled: win.Paywall && win.Paywall.enabled(),
           unlocked: win.Paywall && win.Paywall.unlocked(),
+          revealed: win.Paywall && win.Paywall.revealed && win.Paywall.revealed(),
           ls: win.localStorage.getItem("lim_unlock"),
           paycardHidden: pc && pc.hidden,
+          paycardDisplay: pc ? win.getComputedStyle(pc).display : null,
           posterrowHidden: pr && pr.hidden,
+          posterrowDisplay: pr ? win.getComputedStyle(pr).display : null,
           lockedClass: doc.querySelector(".gridwrap").className,
           canvasShift: cv ? cv.style.transform : null,
           canvasH: cv ? cv.style.height : null,
+          canvasW: cv ? cv.width : null,
+          skylineHidden: sl && sl.hidden,
+          skylineText: sl ? sl.textContent : null,
+          calcline: (doc.querySelector(".calcline") || {}).textContent || null,
+          posterBtnText: pb ? pb.textContent : null,
+          posterBtnGhost: pb ? pb.classList.contains("button--ghost") : null,
+          chipsHidden: ch && ch.hidden,
         });
       }
       if (q.get("reveal")) doc.querySelectorAll(".reveal").forEach(el => el.classList.add("vis"));
@@ -45,7 +73,7 @@
         doc.documentElement.scrollTop = s * (doc.documentElement.scrollHeight - win.innerHeight);
         win.dispatchEvent(new win.Event("scroll"));
       }
-    }, 300);
+    }, parseInt(q.get("settle")) || 300);
   });
 </script>
 </body></html>

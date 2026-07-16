@@ -39,13 +39,15 @@ function starfield(canvas) {
 }
 
 // ---- life grid: the calendar rendered like the app's Canvas ----
-// opts: { count, current, animate, height } — draws into `canvas`
-// (CSS-sized by its wrapper; height set from the layout solver).
+// opts: { count, current, animate, skipCurrent, probeH } — draws into `canvas`
+// (CSS-sized by its wrapper; height set from the layout solver). probeH sets
+// the layout's target box height — the unlocked sky passes a viewport-shaped
+// one; default keeps the classic ~2:3 portrait column.
 function lifeGrid(canvas, opts) {
   const cssW = canvas.parentElement.clientWidth;
   // probe for proportions, then re-lay out at the true content height so the
   // canvas hugs the grid exactly (no dead band, no clipping)
-  const probe = MoonMath.layoutMoons(cssW, cssW * 1.5, opts.count, opts.current, 1);
+  const probe = MoonMath.layoutMoons(cssW, opts.probeH || cssW * 1.5, opts.count, opts.current, 1);
   const layout = MoonMath.layoutMoons(cssW, probe.height, opts.count, opts.current, 1);
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   canvas.width = cssW * dpr; canvas.height = layout.height * dpr;
@@ -150,7 +152,13 @@ function calculator(root) {
   const paycard = root.querySelector(".paycard");
   const posterRow = root.querySelector(".posterrow");
   const gridCaption = root.querySelector(".gridcaption");
+  const skyline = root.querySelector(".skyline");
+  const chips = root.querySelector(".chips");
   let grid = null, countRaf = null, life = null, lastBirthday = null;
+  let filmTimer = null;   // unlock-film fallback — cancelled by any re-render
+
+  // the unlocked sky solves its layout to a viewport-shaped box, not a column
+  const skyTargetH = () => Math.max(window.innerHeight * 0.85, 560);
 
   input.max = new Date().toISOString().slice(0, 10);
   input.min = "1920-01-01";
@@ -165,29 +173,48 @@ function calculator(root) {
     life.horizon = horizon();
     const bloods = life.moons.filter(m => m.isEclipse && m.number <= life.current).length;
     result.classList.add("on");
+    const gated = Paywall.enabled() && !Paywall.unlocked();
+    const open = Paywall.enabled() && Paywall.unlocked();
 
-    // count up to the number, easing out — always free, always first
+    // count up to the number, easing out — always free, always first (but if
+    // the number is already on screen — the unlock film's landing render — a
+    // replayed count-up from 0 would be a stutter, so hold it)
     if (countRaf) cancelAnimationFrame(countRaf);
-    const target = life.current, D = animate && !REDUCE ? 1500 : 0;
+    const target = life.current;
+    const already = Number(numEl.textContent) === target;
+    const D = animate && !REDUCE && !already ? 1500 : 0;
     const start = performance.now();
     (function tick(now) {
-      const p = D ? Math.min(1, (now - start) / D) : 1;
+      const p = D ? Math.min(1, Math.max(0, (now - start) / D)) : 1;
       const eased = 1 - Math.pow(1 - p, 3);
       numEl.textContent = Math.round(target * eased);
       if (p < 1) countRaf = requestAnimationFrame(tick);
     })(start);
 
+    // once the skyline carries the lived/left numbers, the prose keeps only
+    // what the skyline doesn't say (the blood moons)
     lineEl.innerHTML =
-      "full moons lived — " + bloods + " of them blood red.<br>" +
-      "At " + horizonWord(life.horizon) + " years, <span class='num'>" +
-      (life.count - life.current) + "</span> still wait for you.";
+      "full moons lived — " + bloods + " of them blood red." + (open ? "" :
+      "<br>At " + horizonWord(life.horizon) + " years, <span class='num'>" +
+      (life.count - life.current) + "</span> still wait for you.");
 
-    const gated = Paywall.enabled() && !Paywall.unlocked();
     if (grid) grid.stop();
+    // classes first — lifeGrid reads the wrapper's width at construction, and
+    // the full-bleed .sky class changes that width; also clear any leftover
+    // unlock-choreography state so a re-render always lands clean
+    clearTimeout(filmTimer); filmTimer = null;
+    wrap.classList.remove("unveil");
+    wrap.style.height = "";
+    // classic-scrollbar platforms: 100vw includes the scrollbar — expose its
+    // width so the sky's CSS can subtract it and center truly
+    document.documentElement.style.setProperty("--sbw",
+      (window.innerWidth - document.documentElement.clientWidth) + "px");
+    wrap.classList.toggle("locked", gated);
+    wrap.classList.toggle("sky", open);
     wrap.innerHTML = "<canvas aria-label='Your life in moons'></canvas>";
     grid = lifeGrid(wrap.firstChild, { count: life.count, current: life.current,
-                                       animate, skipCurrent: gated });
-    wrap.classList.toggle("locked", gated);
+                                       animate, skipCurrent: gated,
+                                       probeH: open ? skyTargetH() : undefined });
     if (gated) {
       // keep the visitor's breathing moon inside the visible window: if their
       // current moon sits deep in the grid, shift the canvas up so "now"
@@ -199,8 +226,22 @@ function calculator(root) {
       wrap.firstChild.style.transform = offset ? "translateY(" + (-offset) + "px)" : "";
       currentMoonOverlay(wrap, grid.layout, offset, life.current);
     }
-    if (paycard) paycard.hidden = !gated;
-    if (posterRow) posterRow.hidden = !(Paywall.enabled() && Paywall.unlocked());
+    if (paycard) { paycard.hidden = !gated; paycard.classList.remove("fadeout"); }
+    // poster row shows in BOTH paywall states: locked it's the ghost teaser
+    // that routes to checkout, unlocked it's the real download. Dormant: gone.
+    if (posterRow) posterRow.hidden = !Paywall.enabled();
+    if (posterBtn) {
+      // locked copy stays short enough to hold one line on a 320px phone
+      posterBtn.textContent = gated ? "Your poster · $2.99" : "Print your poster";
+      posterBtn.classList.toggle("button--ghost", gated);
+    }
+    if (chips) chips.hidden = gated;   // horizon is a post-purchase refinement
+    if (skyline) {
+      skyline.hidden = !open;
+      if (open) skyline.innerHTML =
+        "<span class='num'>" + life.current + "</span> full moons lived · " +
+        "<span class='num'>" + (life.count - life.current) + "</span> still to come";
+    }
     if (gridCaption) gridCaption.hidden = gated;
     root.querySelectorAll(".chip").forEach(ch =>
       ch.classList.toggle("chip--on", Number(ch.dataset.h) === life.horizon));
@@ -220,7 +261,7 @@ function calculator(root) {
   const buyBtn = root.querySelector(".buybtn");
   if (buyBtn) buyBtn.addEventListener("click", () => {
     buyBtn.disabled = true;
-    Paywall.checkout().then(() => { buyBtn.disabled = false; refresh(); });
+    Paywall.checkout().then(() => { buyBtn.disabled = false; unlockSequence(); });
   });
 
   // the $4.99 app — the second call; becomes a real link once the App Store URL exists
@@ -240,13 +281,20 @@ function calculator(root) {
     if (!restoreRow.hidden) restoreRow.querySelector("input").focus();
   });
   if (restoreRow) restoreRow.querySelector("button").addEventListener("click", async () => {
+    const rbtn = restoreRow.querySelector("button");
+    if (rbtn.disabled) return;         // one flight at a time
     const msg = root.querySelector(".restoremsg");
     const email = restoreRow.querySelector("input").value;
     if (!email) return;
+    rbtn.disabled = true;
     msg.textContent = "Looking for your moons…";
-    const d = await Paywall.restore(email);
-    msg.textContent = d.ok ? "" : "No purchase found for that email.";
-    if (d.ok) refresh();
+    try {
+      const d = await Paywall.restore(email);
+      msg.textContent = d.ok ? "" : "No purchase found for that email.";
+      if (d.ok) unlockSequence();
+    } finally {
+      rbtn.disabled = false;
+    }
   });
 
   // horizon chips (post-unlock)
@@ -255,14 +303,75 @@ function calculator(root) {
     if (lastBirthday) render(lastBirthday, { animate: false });
   }));
 
-  // poster download
+  // poster button — locked it IS the paywall (straight to checkout, same as
+  // the buybtn); unlocked it downloads
   const posterBtn = root.querySelector(".posterbtn");
   if (posterBtn) posterBtn.addEventListener("click", () => {
-    if (life && Paywall.unlocked()) Poster.download(life);
+    if (wrap.classList.contains("unveil")) return;   // let the film land first
+    if (Paywall.enabled() && !Paywall.unlocked()) {
+      posterBtn.disabled = true;
+      Paywall.checkout().then(() => { posterBtn.disabled = false; unlockSequence(); });
+    } else if (life && Paywall.unlocked()) {
+      Poster.download(life);
+    }
   });
 
   function refresh() {
     if (lastBirthday) render(lastBirthday, { animate: false });
+  }
+
+  // the unlock film — played exactly once, the moment a purchase lands:
+  // the fog deepens and swallows the locked grid, the card sinks away, then
+  // the whole sky ripple-reveals full-bleed and the poster row breathes in.
+  function unlockSequence() {
+    if (wrap.classList.contains("unveil")) return;   // film already rolling
+    if (Paywall.revealed()) { refresh(); return; }
+    Paywall.markRevealed();            // set FIRST — a mid-film reload lands calm
+    if (!lastBirthday) return;         // fresh device: entering a birthday is the reveal
+    if (REDUCE) {
+      refresh();
+      root.scrollIntoView({ behavior: "auto" });
+      return;
+    }
+    const canvas = wrap.querySelector("canvas");
+    if (!canvas || !wrap.classList.contains("locked")) { refresh(); return; }
+    // arriving back from Stripe the page is at the top — let the smooth scroll
+    // reach the grid before the fog starts to move, so the film is watched,
+    // not missed
+    const far = Math.abs(root.getBoundingClientRect().top) > window.innerHeight * 0.5;
+    root.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => {
+      if (!canvas.isConnected) return; // a re-render beat us to it — calm state stands
+      // height tween needs concrete endpoints: measured fog clip → solved sky
+      // (same two-pass math lifeGrid will run, so the landing is seamless)
+      const vw = document.documentElement.clientWidth;
+      const h0 = wrap.getBoundingClientRect().height;
+      const probe = MoonMath.layoutMoons(vw, skyTargetH(),
+                                         life.count, life.current, 1);
+      const h1 = MoonMath.layoutMoons(vw, probe.height,
+                                      life.count, life.current, 1).height;
+      wrap.style.height = h0 + "px";
+      void wrap.offsetHeight;          // commit the start height before transitioning
+      wrap.classList.add("unveil");
+      if (paycard) paycard.classList.add("fadeout");
+      wrap.style.height = h1 + "px";
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        const hadFocus = paycard && paycard.contains(document.activeElement);
+        if (paycard) { paycard.hidden = true; paycard.classList.remove("fadeout"); }
+        result.classList.add("settling");
+        render(lastBirthday, { animate: true }); // clears unveil/height, adds .sky, ripples
+        // keyboard journeys (restore) shouldn't drop focus into the void
+        if (hadFocus && posterBtn) posterBtn.focus({ preventScroll: true });
+        setTimeout(() => result.classList.remove("settling"), 3500);
+      };
+      canvas.addEventListener("transitionend", e => {
+        if (e.propertyName === "opacity") finish();
+      }, { once: true });
+      filmTimer = setTimeout(finish, 1100); // fallback; any re-render cancels it
+    }, far ? 650 : 0);
   }
 
   // returning visitor / returning buyer: restore their calendar quietly
@@ -273,19 +382,47 @@ function calculator(root) {
       const [y, mo, d] = saved.split("-").map(Number);
       render(new Date(y, mo - 1, d), { animate: false });
     }
+    // bought before the reveal existed (or state was hand-set): never ambush a
+    // later visit with the film — mark it seen and stay calm
+    if (Paywall.enabled() && Paywall.unlocked() && !Paywall.revealed())
+      Paywall.markRevealed();
     Paywall.handleReturn().then(status => {
       if (status === "unlocked") {
-        refresh();
-        root.scrollIntoView({ behavior: REDUCE ? "auto" : "smooth" });
+        unlockSequence();
       } else if (status === "failed") {
+        if (Paywall.unlocked()) { refresh(); return; }   // already in — stay quiet
         const msg = root.querySelector(".restoremsg");
         if (msg) msg.textContent =
           "We couldn't confirm that payment — if you were charged, use Restore with your receipt email.";
         if (paycard) paycard.hidden = false;
+        // a charged-but-unverified visitor must SEE this — even with no saved
+        // birthday the result area (and its Restore) has to be on screen
+        result.classList.add("on");
+        root.scrollIntoView({ behavior: "auto" });
       }
     });
   }
   boot();
+
+  // back from Stripe without paying: bfcache resumes the page with the tapped
+  // button still disabled (real checkout()'s promise never resolves) — re-arm
+  window.addEventListener("pageshow", e => {
+    if (!e.persisted) return;
+    if (buyBtn) buyBtn.disabled = false;
+    if (posterBtn) posterBtn.disabled = false;
+  });
+
+  // the sky is laid out for the viewport — re-solve when the width truly
+  // changes (ignore height-only churn from phone URL bars collapsing)
+  let resizeT = null, lastVW = window.innerWidth;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(() => {
+      if (window.innerWidth === lastVW) return;
+      lastVW = window.innerWidth;
+      refresh();
+    }, 180);
+  });
 }
 
 // ---- tonight's sky: real phase + next full moon ----
